@@ -26,7 +26,7 @@ export function SignIn() {
         required
         legend="Senha"
         type="password"
-        placeholder="123456"
+        placeholder="password"
         onChange={(e) => setPassword(e.target.value)}
       />
 
