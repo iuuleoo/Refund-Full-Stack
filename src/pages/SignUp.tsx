@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { z, ZodError } from "zod";
+import { useNavigate } from "react-router";
+import { AxiosError } from "axios";
+
+import { api } from "../services/api"
 
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
@@ -8,9 +12,9 @@ const SignUpSchema = z.object({
   name: z.string().trim().min(1, { message: "Informe o nome"}),
   email: z.string().email({ message: "E-mail inválido" }),
   password: z.string().min(6, { message: "Senha deverá ter no mínimo 6 caracteres" }),
-  passwordConfirm: z.string({ message: "confirme a senha"}),
-}).refine(( data ) => data.password === data.passwordConfirm, {
-  message: "As senhas são iguais",
+  passwordConfirm: z.string().min(1, { message: "Confirme a senha"}),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "As senhas não são iguais",
   path: ["passwordConfirm"],
 })
 
@@ -20,8 +24,9 @@ export function SignUp() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate()
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     try {
@@ -34,16 +39,25 @@ export function SignUp() {
         passwordConfirm,
       })
 
-    } catch (error) {
-      if(error instanceof ZodError) {
-        return alert(error.issues[0].message);
-    }
+      await api.post("/users", data)
 
-    alert("Erro ao cadastrar usuário");
+      if (confirm("Cadastrado com sucesso! Deseja ir para o login?")) {
+        navigate("/")
+      }
+
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return alert(error.issues[0].message);
+      }
+
+      if (error instanceof AxiosError) {
+        return alert(error.response?.data.message)
+      }
+
+      alert("Erro ao cadastrar usuário");
     } finally {
       setIsLoading(false);
     }
-
   }
 
   return (
